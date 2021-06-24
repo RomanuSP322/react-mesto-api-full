@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const isUrl = require('validator/lib/isURL');
 const { celebrate, Joi, errors } = require('celebrate');
 const NotFoundError = require('./errors/not-found');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
@@ -40,7 +41,12 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().pattern(/^(https?:\/\/)?([\w-]{1,32}\.[\w-]{1,32})[^\s@]*$/),
+    avatar: Joi.string().custom((value, helpers) => {
+      if (isUrl(value, { require_protocol: true })) {
+        return value;
+      }
+      return helpers.message('Неверная ссылка');
+    }),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
   }),
